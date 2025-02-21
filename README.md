@@ -37,17 +37,22 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+4. Or install with conda:
+```bash
+conda env create --file=environment.yml
+```
+
 ## Usage
 
 ### Starting the Server
 Basic usage with default settings:
 ```bash
-python app.py
+python app_claude.py
 ```
 
 Custom configuration:
 ```bash
-python app.py --data-dir /path/to/data --model-dir /path/to/models --port 8000 --debug
+python app_claude.py --data-dir /path/to/data --model-dir /path/to/models --port 8000 --debug
 ```
 
 Available command-line arguments:
