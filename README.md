@@ -26,18 +26,7 @@ git clone [repository-url]
 cd [repository-name]
 ```
 
-2. Create and activate a virtual environment:
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-3. Install required packages:
-```bash
-pip install -r requirements.txt
-```
-
-4. Or install with conda:
+2. . Install with conda:
 ```bash
 conda env create --file=environment.yml
 ```
