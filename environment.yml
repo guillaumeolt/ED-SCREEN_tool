@@ -1,4 +1,4 @@
-name: QGexAR_test
+name: QGexAR
 channels:
   - conda-forge
   - defaults
