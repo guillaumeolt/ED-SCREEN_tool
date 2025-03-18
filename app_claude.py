@@ -49,26 +49,25 @@ class PredictionAPI:
             self.gene_info["feature_space"] == "landmark"
         ]["gene_id"].astype(str).tolist()
 
-    def predict_zscore(self, data: pd.DataFrame) -> Dict:
+    def predict_zscore(self, data: pd.DataFrame, cell_line) -> Dict:
         """Make predictions using z-score data"""
         results = {}
+
+        # Make predictions
+        predictions = {}
+        for endpoint, model in self.models[cell_line].items():
+            features = self.descriptors[cell_line][endpoint]
+            predictions[f'{cell_line}_{endpoint}'] = model.predict_proba(data[features])[:, 1].tolist()
         
-        for cell_line in ['MCF7', 'A549']:
-            # Make predictions
-            predictions = {}
-            for endpoint, model in self.models[cell_line].items():
-                features = self.descriptors[cell_line][endpoint]
-                predictions[endpoint] = model.predict_proba(data[features])[:, 1].tolist()
+        # Calculate applicability domain
+        adi = self.calculate_adi(data, cell_line)
+        
+        results[cell_line] = {
+            'predictions': predictions,
+            'applicability_domain': adi
+        }
             
-            # Calculate applicability domain
-            adi = self.calculate_adi(data, cell_line)
-            
-            results[cell_line] = {
-                'predictions': predictions,
-                'applicability_domain': adi
-            }
-            
-        return results
+        return results[cell_line]
 
     def predict_smiles(self, similarity_data: Dict[str, List[float]]) -> Dict:
         """Make predictions using SMILES similarity data"""
@@ -92,7 +91,7 @@ class PredictionAPI:
                 predictions = {}
                 for endpoint, model in self.models[cell_line].items():
                     features = self.descriptors[cell_line][endpoint]
-                    predictions[endpoint] = model.predict_proba(compound_data[features])[:, 1].tolist()
+                    predictions[f'{cell_line}_{endpoint}'] = model.predict_proba(compound_data[features])[:, 1].tolist()
                 
                 # Calculate ADI
                 adi = self.calculate_adi(compound_data, cell_line)
@@ -110,12 +109,12 @@ class PredictionAPI:
                     features = self.descriptors[cell_line][endpoint]
                     pred_values = model.predict_proba(similar_compounds[features])[:, 1]
                     # Take mean of k nearest neighbors
-                    predictions[endpoint] = [float(np.mean(pred_values))]
+                    predictions[f'{cell_line}_{endpoint}'] = [float(np.mean(pred_values))]
                 # Fill ADI with out of ADI values
                 adi = {
-                    'ADI_ER': [0],
-                    'ADI_AR': [0],
-                    'ADI_TR': [0]
+                    f'ADI_{cell_line}_ER': [0],
+                    f'ADI_{cell_line}_AR': [0],
+                    f'ADI_{cell_line}_TR': [0]
                 }
             
             results[cell_line] = {
@@ -140,7 +139,7 @@ class PredictionAPI:
             mean_similarities = pd.DataFrame(similarities).apply(
                 lambda x: np.mean(sorted(x, reverse=True)[:3]), axis=1
             )
-            adi[f'ADI_{endpoint}'] = (mean_similarities > threshold).astype(int).tolist()
+            adi[f'ADI_{cell_line}_{endpoint}'] = (mean_similarities > threshold).astype(int).tolist()
             
         return adi
 
@@ -160,10 +159,15 @@ def create_app(data_dir, model_dir):
                 return jsonify({"error": "Prediction type not specified"}), 400
 
             if data['prediction_type'] == 'zscore':
-                if 'data' not in data:
-                    return jsonify({"error": "No z-score data provided"}), 400
-                input_df = pd.read_csv(data['data'], sep="\t") # TODO pd.DataFrame(data['data'])
-                results = predictor.predict_zscore(input_df)
+                if 'data_MCF7' not in data and 'data_A549' not in data:
+                    return jsonify({"error": "No z-score data provided for the MCF7 cell line and A549 cell line"}), 400
+                results = {}
+                if 'data_MCF7' in data:
+                    input_df = pd.read_csv(data['data_MCF7'], sep="\t")
+                    results["MCF7"] = predictor.predict_zscore(input_df, cell_line='MCF7')
+                if 'data_A549' in data:
+                    input_df = pd.read_csv(data['data_A549'], sep="\t")
+                    results["A549"] = predictor.predict_zscore(input_df, cell_line='A549')
             
             elif data['prediction_type'] == 'smiles':
                 if 'similarity_data' not in data:

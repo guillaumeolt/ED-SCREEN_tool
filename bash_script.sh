@@ -4,7 +4,7 @@
 API_URL="http://127.0.0.1:5000/predict"
 
 # Define JSON payload
-JSON_PAYLOAD='{"prediction_type": "zscore","data": "data/data_exemple.csv"}'
+JSON_PAYLOAD='{"prediction_type": "zscore","data_MCF7": "data/data_exemple.csv"}'
 
 # Send POST request
 curl -X POST "$API_URL" \

@@ -61,7 +61,8 @@ Request:
 ```json
 {
     "prediction_type": "zscore",
-    "data": "PATH TO Z-SCORE VALUES"
+    "data_MCF7": "PATH TO Z-SCORE VALUES FOR MCF7 CELL LINE",
+    "data_A549": "PATH TO Z-SCORE VALUES FOR A549 CELL LINE",
 }
 ```
 
